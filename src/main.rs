@@ -31,7 +31,7 @@ async fn main() {
     let prompt = format!("{LLM_PROMPT}\n\n```\n{commits}\n```");
 
     let request = GenerationRequest::new(LLM_MODEL.into(), prompt)
-        .options(GenerationOptions::default().top_k(10));
+        .options(GenerationOptions::default().top_k(20));
 
     let response = ollama
         .generate(request)
@@ -45,20 +45,36 @@ async fn main() {
     });
 
     if args.dry_run {
-        println!("[dry run] jj bookmark create {branch_name}");
+        println!(
+            "[dry run] jj bookmark create {branch_name} --revision {}",
+            args.change
+        );
         println!("[dry run] jj git push --bookmark {branch_name}");
         return;
     }
 
-    let branch_output =
-        execute(process::Command::new("jj").args(&["bookmark", "create", &branch_name]));
+    println!(
+        "jj bookmark create {branch_name} --revision {}",
+        args.change
+    );
+    let branch_output = execute(process::Command::new("jj").args(&[
+        "bookmark",
+        "create",
+        &branch_name,
+        "--revision",
+        &args.change,
+    ]));
+    if !branch_output.trim().is_empty() {
+        println!("{branch_output}");
+    }
 
-    println!("{branch_output}");
-
+    println!("jj git push --bookmark {branch_name}");
     let push_output =
         execute(process::Command::new("jj").args(&["git", "push", "--bookmark", &branch_name]));
 
-    println!("{push_output}");
+    if !push_output.trim().is_empty() {
+        println!("{push_output}");
+    }
 }
 
 fn execute(command: &mut process::Command) -> String {

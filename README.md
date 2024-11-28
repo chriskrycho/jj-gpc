@@ -8,7 +8,7 @@ Jujutsu is a modern, Git-compatible VCS. It supports (and I primarily use) anony
 
 Jujutsu has native support making this easy. If you run `jj git push --change <change ID>`,it creates a Jujutsu bookmark (which it maps to Git branches) and then pushes that newly created bookmark. The bookmark names it creates are of the form `push-<change id>`, though. Those are not especially attractive to most collaborators!
 
-This tiny tool is one “solution”: it generates a bookmark name based on the messages associated with the changes you tell it to use—by default, `trunk()..@`, or “everything between my current working copy and whatever the ‘trunk’ is for this project (usually `main` or `master`”.
+This tiny tool is one “solution”: it generates a bookmark name based on the messages associated with the changes you tell it to use—by default, `trunk()..@`, or “everything between my current working copy and whatever the ‘trunk’ is for this project (usually `main` or `master`”).
 
 `gpc` is short for `git push change`.
 

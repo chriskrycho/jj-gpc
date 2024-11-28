@@ -54,7 +54,7 @@ That’s it; now you can run `jj-gpc` to do this.
 `jj-gpc [change] [flags]`
 
 
-`change` is the revset to use to generate the bookmark name. If not passed, it will use `@`. The .
+`change` is the revset to use to generate the bookmark name. If not passed, it will use `@`.
 
 Flags:
 

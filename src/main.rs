@@ -11,7 +11,7 @@ use regex::Regex;
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
     let args = Cli::parse();
-    let revision = args.revision;
+    let revset = format!("{}..{}", args.from, args.change);
 
     let commits = execute(process::Command::new("jj").args(&[
         "log",
@@ -19,8 +19,13 @@ async fn main() {
         LOG_TEMPLATE,
         "--no-graph",
         "-r",
-        &revision,
+        &revset,
     ]));
+
+    if commits.trim().is_empty() {
+        eprintln!("No commits to summarize");
+        std::process::exit(1);
+    }
 
     let ollama = Ollama::default();
     let prompt = format!("{LLM_PROMPT}\n\n```\n{commits}\n```");
@@ -79,8 +84,11 @@ fn execute(command: &mut process::Command) -> String {
 /// Generate a branch name for use with jj.
 #[derive(clap::Parser, Debug)]
 struct Cli {
-    #[arg(short, long, default_value = DEFAULT_REV)]
-    revision: String,
+    #[arg(default_value = "@")]
+    change: String,
+
+    #[arg(short, long, default_value = "trunk()")]
+    from: String,
 
     /// Prefix for the generated branch name, `<prefix>/<generated>`
     #[arg(short, long)]
@@ -94,8 +102,6 @@ struct Cli {
 lazy_static! {
     static ref SPACES: Regex = Regex::new(r"\s+").unwrap();
 }
-
-const DEFAULT_REV: &'static str = "trunk()..@";
 
 const LOG_TEMPLATE: &'static str = r#"if(description, description.first_line(), '') ++ "\n""#;
 

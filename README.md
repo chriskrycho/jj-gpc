@@ -49,8 +49,15 @@ Prerequisites: a relatively recent version of Rust. (I built it with Rust 1.82, 
 
 That’s it; now you can run `jj-gpc` to do this.
 
-## Options
+## Usage
 
-- `-r`/`--revision`: the revset to use to generate the bookmark name. At the moment, this is not used for which changes to use to generate the message; the bookmark is always created at `@`.
+`jj-gpc [change] [flags]`
+
+
+`change` is the revset to use to generate the bookmark name. If not passed, it will use `@`. The .
+
+Flags:
+
+- `-f`/`--from`: the initial revision to use in the revset for generating the name. Note that the revset is of the form `<from>..<change>`, so the `<from>` message will *not* be included, because the default is `trunk()`, and the point is to generate a description of what is *different* from the trunk.
 - `-p`/`--prefix`: apply a prefix before the generated bookmark name. For example, `jj-gpc -p chriskrycho` would produce a name like `chriskrycho/did-some-stuff`, instead of just `did-some-stuff`.
 - `--dry-run`: generate a branch name but neither create the bookmark nor push it.

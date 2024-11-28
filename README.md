@@ -1,6 +1,6 @@
 # jj-gpc
 
-✨ LLM-based bookmark (Git branch) name creation for [Jujutsu VCS][jj]
+✨ 100% local LLM-based bookmark (Git branch) name creation for [Jujutsu VCS][jj]
 
 [jj]: https://github.com/martinvonz/jj
 

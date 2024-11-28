@@ -66,7 +66,10 @@ fn execute(command: &mut process::Command) -> String {
         .unwrap_or_else(|e| panic!("Could not execute command {command:?}.\nCause: {e}"));
 
     if !status.success() {
-        eprintln!("{status}: {stderr:?}");
+        eprintln!(
+            "Error running '{command:?}' ({status}):\nCause: {}",
+            String::from_utf8_lossy(&stderr)
+        );
         process::exit(status.code().unwrap_or(1));
     }
 

@@ -11,11 +11,7 @@ use regex::Regex;
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
     let args = Cli::parse();
-    let revision = args
-        .revision
-        .as_ref()
-        .map(|s| s.as_str())
-        .unwrap_or(DEFAULT_REV);
+    let revision = args.revision;
 
     let commits = execute(process::Command::new("jj").args(&[
         "log",
@@ -23,7 +19,7 @@ async fn main() {
         LOG_TEMPLATE,
         "--no-graph",
         "-r",
-        revision,
+        &revision,
     ]));
 
     let ollama = Ollama::default();
@@ -37,7 +33,11 @@ async fn main() {
         .await
         .unwrap_or_else(|e| panic!("{e}"))
         .response;
+
     let branch_name = SPACES.replace_all(response.trim(), "-");
+    let branch_name = args.prefix.map_or(branch_name.to_string(), |prefix| {
+        format!("{prefix}/{branch_name}")
+    });
 
     if args.dry_run {
         println!("[dry run] jj bookmark create {branch_name}");
@@ -76,9 +76,14 @@ fn execute(command: &mut process::Command) -> String {
 /// Generate a branch name for use with jj.
 #[derive(clap::Parser, Debug)]
 struct Cli {
-    #[arg(short, long)]
-    revision: Option<String>,
+    #[arg(short, long, default_value = DEFAULT_REV)]
+    revision: String,
 
+    /// Prefix for the generated branch name, `<prefix>/<generated>`
+    #[arg(short, long)]
+    prefix: Option<String>,
+
+    /// Generate the branch name, but do not actually create or push it.
     #[arg(long = "dry-run", default_value = "false")]
     dry_run: bool,
 }

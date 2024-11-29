@@ -1,7 +1,6 @@
 use std::process::{self, Output};
 
-use clap::Parser as _;
-use lazy_static::lazy_static;
+use clap::{Parser as _, ValueEnum as _};
 use ollama_rs::{
     generation::{completion::request::GenerationRequest, options::GenerationOptions},
     Ollama,
@@ -30,8 +29,19 @@ async fn main() {
     let ollama = Ollama::default();
     let prompt = format!("{LLM_PROMPT}\n\n```\n{commits}\n```");
 
-    let request = GenerationRequest::new(LLM_MODEL.into(), prompt)
-        .options(GenerationOptions::default().top_k(30).temperature(1.5));
+    let model = args
+        .model
+        .to_possible_value()
+        .expect("there should always be a model value")
+        .get_name()
+        .to_owned();
+
+    let request = GenerationRequest::new(model, prompt).options(
+        GenerationOptions::default()
+            .top_k(args.top_k)
+            .top_p(args.top_p)
+            .temperature(args.temperature),
+    );
 
     let response = ollama
         .generate(request)
@@ -39,7 +49,10 @@ async fn main() {
         .unwrap_or_else(|e| panic!("{e}"))
         .response;
 
-    let branch_name = SPACES.replace_all(response.trim(), "-");
+    let branch_name = Regex::new(r"\s+")
+        .unwrap()
+        .replace_all(response.trim(), "-");
+
     let branch_name = args.prefix.map_or(branch_name.to_string(), |prefix| {
         format!("{prefix}/{branch_name}")
     });
@@ -113,13 +126,35 @@ struct Cli {
     /// Generate the branch name, but do not actually create or push it.
     #[arg(long = "dry-run", default_value = "false")]
     dry_run: bool,
+
+    /// The temperature of the model. Increasing the temperature will make the
+    /// model answer more creatively.
+    #[arg(long, default_value = "0.8")]
+    temperature: f32,
+
+    /// Reduces the probability of generating nonsense. A higher value (e.g. 100)
+    /// will give more diverse answers, while a lower.
+    #[arg(long, default_value = "40")]
+    top_k: u32,
+
+    /// Works together with top-k. A higher value (e.g., 0.95) will lead to more
+    /// diverse text, while a lower value (e.g., 0.5) will generate more focused
+    /// and conservative text.
+    #[arg(long, default_value = "0.9")]
+    top_p: f32,
+
+    #[arg(long, value_enum, default_value = "llama3.2")]
+    model: Model,
 }
 
-lazy_static! {
-    static ref SPACES: Regex = Regex::new(r"\s+").unwrap();
+#[derive(clap::ValueEnum, Clone, Debug)]
+enum Model {
+    #[clap(name = "llama3.2")]
+    Llama3_2,
+    #[clap(name = "llama3.2:1b")]
+    Llama3_2_1b,
 }
 
-const LOG_TEMPLATE: &'static str = r#"if(description, description.first_line(), '') ++ "\n""#;
+const LOG_TEMPLATE: &'static str = r#"if(description, description) ++ "\n\n---\n\n""#;
 
-const LLM_MODEL: &'static str = "llama3.2";
-const LLM_PROMPT: &'static str = "Summarizing *all* of these messages in a single phrase. The phrase should consist of 2–4-words, all lowercase. Do not mention branches. Do not include more words. Reply with only the phrase.";
+const LLM_PROMPT: &'static str = "Summarize all of these messages in a single phrase. The phrase should consist of 2–4-words, all lowercase. Do not mention branches. Do not include more words. Reply with only the phrase.";

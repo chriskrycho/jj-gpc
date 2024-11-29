@@ -31,7 +31,7 @@ async fn main() {
     let prompt = format!("{LLM_PROMPT}\n\n```\n{commits}\n```");
 
     let request = GenerationRequest::new(LLM_MODEL.into(), prompt)
-        .options(GenerationOptions::default().top_k(20));
+        .options(GenerationOptions::default().top_k(30).temperature(1.5));
 
     let response = ollama
         .generate(request)

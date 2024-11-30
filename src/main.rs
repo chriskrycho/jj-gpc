@@ -9,6 +9,7 @@ use regex::Regex;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
+    env_logger::init();
     let args = Cli::parse();
     let revset = format!("{}..{}", args.from, args.change);
 
@@ -37,6 +38,7 @@ async fn main() {
         .to_owned();
 
     let request = GenerationRequest::new(model, prompt).options(
+    log::debug!("prompt: {prompt}");
         GenerationOptions::default()
             .top_k(args.top_k)
             .top_p(args.top_p)
@@ -91,6 +93,7 @@ async fn main() {
 }
 
 fn execute(command: &mut process::Command) -> String {
+    log::trace!("{command:?}");
     let Output {
         status,
         stdout,

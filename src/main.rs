@@ -1,4 +1,4 @@
-use std::process::{self, Output};
+use std::process;
 
 use clap::Parser as _;
 use ollama_rs::{
@@ -19,16 +19,25 @@ async fn main() {
         Some(LogFormat::OneLine) | None => LOG_ONE_LINE,
     };
 
-    let commits =
-        execute(process::Command::new("jj").args(&["log", "-T", log_template, "-r", &revset]));
+    let commits = execute(process::Command::new("jj").args(&[
+        "log",
+        "-T",
+        log_template,
+        "-r",
+        &revset,
+        "--no-graph",
+    ]));
 
-    if commits.trim().is_empty() {
+    if commits.stdout.trim().is_empty() {
         eprintln!("No commits to summarize");
         std::process::exit(1);
     }
 
     let ollama = Ollama::default();
-    let prompt = format!("{PROMPT_START}\n\n```\n{commits}\n```\n\n{PROMPT_END}");
+    let prompt = format!(
+        "{PROMPT_START}\n\n```\n{commits}\n```\n\n{PROMPT_END}",
+        commits = commits.stdout
+    );
     log::debug!("prompt: {prompt}");
 
     let request = GenerationRequest::new(args.model, prompt.clone()).options(
@@ -73,22 +82,22 @@ async fn main() {
         "--revision",
         &args.change,
     ]));
-    if !branch_output.trim().is_empty() {
-        println!("{branch_output}");
+    if !branch_output.stdout.trim().is_empty() {
+        println!("{}", branch_output.stdout);
+    }
+    if !branch_output.stderr.trim().is_empty() {
+        println!("{}", branch_output.stderr);
     }
 
     println!("jj git push --bookmark {branch_name}");
     let push_output =
         execute(process::Command::new("jj").args(&["git", "push", "--bookmark", &branch_name]));
-
-    if !push_output.trim().is_empty() {
-        println!("{push_output}");
-    }
+    push_output.to_console();
 }
 
-fn execute(command: &mut process::Command) -> String {
+fn execute(command: &mut process::Command) -> Output {
     log::trace!("{command:?}");
-    let Output {
+    let process::Output {
         status,
         stdout,
         stderr,
@@ -104,7 +113,28 @@ fn execute(command: &mut process::Command) -> String {
         process::exit(status.code().unwrap_or(1));
     }
 
-    String::from_utf8_lossy(&stdout).to_string()
+    Output {
+        stdout: String::from_utf8_lossy(&stdout).to_string(),
+        stderr: String::from_utf8_lossy(&stderr).to_string(),
+    }
+}
+
+struct Output {
+    stdout: String,
+    stderr: String,
+}
+
+impl Output {
+    fn to_console(&self) {
+        let Self { stdout, stderr } = self;
+        if !stdout.trim().is_empty() {
+            print!("{}", stdout);
+        }
+
+        if !stderr.trim().is_empty() {
+            eprint!("{}", stderr);
+        }
+    }
 }
 
 /// Generate a branch name for use with jj.

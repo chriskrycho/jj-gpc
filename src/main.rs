@@ -26,7 +26,6 @@ async fn main() {
         "-r",
         &revset,
         "--no-graph",
-        "--allow-new",
     ]));
 
     if commits.stdout.trim().is_empty() {
@@ -90,9 +89,14 @@ async fn main() {
         println!("{}", branch_output.stderr);
     }
 
-    println!("jj git push --bookmark {branch_name}");
-    let push_output =
-        execute(process::Command::new("jj").args(&["git", "push", "--bookmark", &branch_name]));
+    println!("jj git push --bookmark {branch_name} --allow-new");
+    let push_output = execute(process::Command::new("jj").args(&[
+        "git",
+        "push",
+        "--bookmark",
+        &branch_name,
+        "--allow-new",
+    ]));
     push_output.to_console();
 }
 

@@ -144,6 +144,7 @@ impl Output {
 
 /// Generate a branch name for use with jj.
 #[derive(clap::Parser, Debug)]
+#[command(version, author)]
 struct Cli {
     #[arg(default_value = "@")]
     change: String,

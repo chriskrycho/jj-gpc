@@ -26,6 +26,7 @@ async fn main() {
         "-r",
         &revset,
         "--no-graph",
+        "--allow-new",
     ]));
 
     if commits.stdout.trim().is_empty() {

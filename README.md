@@ -41,7 +41,7 @@ Prerequisites: a relatively recent version of Rust. (I built it with Rust 1.82, 
 - Fetch [the `phi3` model][model]:
 
     ```sh
-    ollama pull llama3.2
+    ollama pull phi3
     ```
 
 [o]: https://ollama.com

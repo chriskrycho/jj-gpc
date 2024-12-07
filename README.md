@@ -38,14 +38,14 @@ Prerequisites: a relatively recent version of Rust. (I built it with Rust 1.82, 
 
 - Install and run [ollama][o].
 
-- Fetch [the `llama3.2` model][model]:
+- Fetch [the `phi3` model][model]:
 
     ```sh
-    ollama fetch llama3.2
+    ollama pull phi3
     ```
 
 [o]: https://ollama.com
-[model]: https://ollama.com/library/llama3.2
+[model]: https://ollama.com/library/phi3
 
 That’s it; now you can run `jj-gpc` to do this.
 

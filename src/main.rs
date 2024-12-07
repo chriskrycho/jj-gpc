@@ -184,7 +184,7 @@ struct Cli {
     /// The model you choose to use will significantly alters the quality of the
     /// output, so you may need to tune the parameters as well. If this is not a
     /// model available in Ollama on your system, the request will fail.
-    #[arg(long, default_value = "phi3:3.8b-mini-4k-instruct-q4_K_S")]
+    #[arg(long, default_value = "phi3")]
     model: String,
 }
 

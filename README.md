@@ -56,11 +56,14 @@ That’s it; now you can run `jj-gpc` to do this.
 
 `change` is the revset to use to generate the bookmark name. If not passed, it will use `@`.
 
-Flags:
+A few of the most useful flags:
 
 - `-f`/`--from`: the initial revision to use in the revset for generating the name. Note that the revset is of the form `<from>..<change>`, so the `<from>` message will *not* be included, because the default is `trunk()`, and the point is to generate a description of what is *different* from the trunk.
 - `-p`/`--prefix`: apply a prefix before the generated bookmark name. For example, `jj-gpc -p chriskrycho` would produce a name like `chriskrycho/did-some-stuff`, instead of just `did-some-stuff`.
+- `--log-format`: pass `one-line` (the default) to pass just summary messages, or `full` to pass the whole commit message, to the LLM for branch name description.
 - `--dry-run`: generate a branch name but neither create the bookmark nor push it.
+
+For the full set of flags and more details, run `jj-gpc --help`!
 
 ## Example output
 

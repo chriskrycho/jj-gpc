@@ -169,7 +169,8 @@ struct Cli {
     temperature: f32,
 
     /// Reduces the probability of generating nonsense. A higher value (e.g. 100)
-    /// will give more diverse answers, while a lower.
+    /// will give more diverse answers, while a lower value (e.g. 10) will be more
+    /// conservative. (Default: 40)
     #[arg(long, default_value = "20")]
     top_k: u32,
 

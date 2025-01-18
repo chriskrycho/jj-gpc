@@ -110,7 +110,7 @@ async fn main() {
 }
 
 #[derive(JsonSchema, Deserialize, Debug)]
-struct Branch(#[schemars(regex(pattern = "^[a-z]+(-[a-z]+){2,4}$"))] String);
+struct Branch(#[schemars(regex(pattern = "^[a-z]{1,10}+(-[a-z]{1,10}){2,4}$"))] String);
 
 fn execute(command: &mut process::Command) -> CommandOutput {
     log::trace!("{command:?}");

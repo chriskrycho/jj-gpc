@@ -44,13 +44,6 @@ async fn main() {
     );
     log::debug!("prompt: {prompt}");
 
-    let schema = schema_for!(Branch);
-    std::fs::write(
-        std::path::PathBuf::from("/Users/chris/Desktop/schema.json"),
-        serde_json::to_string_pretty(&schema).unwrap(),
-    )
-    .unwrap();
-
     let request = GenerationRequest::new(args.model.clone(), prompt.clone())
         .format(FormatType::StructuredJson(JsonStructure::new::<Branch>()))
         .options(
@@ -215,28 +208,28 @@ enum LogFormat {
     Full,
 }
 
-const LOG_ONE_LINE: &'static str = r#"if(description, description.first_line(), '') ++ "\n""#;
-const LOG_FULL: &'static str =
-    r#"if(description, description, '') ++ "\n**********\n**********\n**********\n\n""#;
+const LOG_ONE_LINE: &'static str =
+    r#"if(description, description.first_line(), '') ++ "\n\n**********\n\n""#;
+const LOG_FULL: &'static str = r#"if(description, description, '') ++ "\n\n**********\n\n""#;
 
-const PROMPT_START: &'static str = "A commit log";
+const PROMPT_START: &'static str = r#"Rules for branch names:
+
+- A good branch name uses at least 3 and no more than 5 lowercase words separated by hyphens.
+- A good branch name is always derived from the summary of changes in the log.
+- A bad branch name has too little information, like `ab-1234`.
+- A bad branch name would only use the date.
+- Empty commits are not relevant.
+
+A commit log. Commits are in blocks of markdown. If there are multiple commits, they will be separated by the following string:
+
+```
+**********
+```
+
+Commits:
+
+"#;
 const PROMPT_END: &'static str = r#"
 
-- A good branch name is always derived from the summary of changes in the log.
-- Never return branch names which:
-    - have too little information, like `ab-1234`
-    - are too long, for example `this-branch-name-is-fifteen-words-long-instead-of-maxxing-out-at-seven-as-instructed`
-    - simply include a date
-- Do not include any explanation, only the branch name.
-- Ignore any empty commits.
-
-Commits are separated by the following string:
-
-```
-**********
-**********
-**********
-```
-
-The best descriptive branch name following these rules (*not* a pull request description, just a branch name) for a Git branch containing these commits, using at least 3 and no more than 5 lowercase words separated by hyphens, is:
+The best descriptive branch name for these commits (*not* a pull request description, just a branch name) for a Git branch containing these commits is:
 "#;

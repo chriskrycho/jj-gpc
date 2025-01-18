@@ -109,6 +109,7 @@ async fn main() {
     push_output.to_console();
 }
 
+#[repr(transparent)]
 #[derive(JsonSchema, Deserialize, Debug)]
 struct Branch(#[schemars(regex(pattern = "^[a-z]{1,10}+(-[a-z]{1,10}){2,4}$"))] String);
 

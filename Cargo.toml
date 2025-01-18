@@ -1,6 +1,6 @@
 [package]
 name = "jj-gpc"
-version = "0.6.0"
+version = "0.7.0"
 edition = "2021"
 license-file = "LICENSE.md"
 authors = ["Chris Krycho <hello@chriskrycho.com>"]
@@ -11,5 +11,7 @@ clap = { version = "4", features = ["derive"] }
 env_logger = "0.11"
 log = "0.4"
 ollama-rs = "0.2"
-regex = "1"
+serde = { version = "1.0.217", features = ["serde_derive"] }
+serde_json = "1.0.135"
+schemars = { version = "0.8" }
 tokio = { version = "1", features = ["macros", "rt"] }

@@ -2,10 +2,15 @@ use std::process;
 
 use clap::Parser as _;
 use ollama_rs::{
-    generation::{completion::request::GenerationRequest, options::GenerationOptions},
+    generation::{
+        completion::{request::GenerationRequest, GenerationResponse},
+        options::GenerationOptions,
+        parameters::{FormatType, JsonSchema, JsonStructure},
+    },
     Ollama,
 };
-use regex::Regex;
+use schemars::schema_for;
+use serde::Deserialize;
 
 #[tokio::main(flavor = "current_thread")]
 async fn main() {
@@ -33,34 +38,44 @@ async fn main() {
         std::process::exit(1);
     }
 
-    let ollama = Ollama::default();
     let prompt = format!(
         "{PROMPT_START}\n\n```\n{commits}\n```\n\n{PROMPT_END}",
         commits = commits.stdout
     );
     log::debug!("prompt: {prompt}");
 
-    let request = GenerationRequest::new(args.model, prompt.clone()).options(
-        GenerationOptions::default()
-            .top_k(args.top_k)
-            .top_p(args.top_p)
-            .temperature(args.temperature)
-            .num_predict(10),
-    );
+    let schema = schema_for!(Branch);
+    std::fs::write(
+        std::path::PathBuf::from("/Users/chris/Desktop/schema.json"),
+        serde_json::to_string_pretty(&schema).unwrap(),
+    )
+    .unwrap();
 
-    let generation_response = ollama
+    let request = GenerationRequest::new(args.model.clone(), prompt.clone())
+        .format(FormatType::StructuredJson(JsonStructure::new::<Branch>()))
+        .options(
+            GenerationOptions::default()
+                .top_k(args.top_k)
+                .top_p(args.top_p)
+                .temperature(args.temperature),
+        );
+
+    let response_result = Ollama::default()
         .generate(request)
         .await
         .unwrap_or_else(|e| panic!("{e}"));
-    let response = generation_response.response.trim().trim_end_matches("-");
 
-    let branch_name = Regex::new(r"\s+")
-        .unwrap()
-        .replace_all(response.trim(), "-");
+    let GenerationResponse { response, .. } = response_result;
 
-    let branch_name = args.prefix.map_or(branch_name.to_string(), |prefix| {
-        format!("{prefix}/{branch_name}")
+    let branch = serde_json::from_str::<Branch>(&response).unwrap_or_else(|err| {
+        eprintln!("{err}");
+        process::exit(1);
     });
+
+    let branch_name = args
+        .prefix
+        .map(|prefix| format!("{prefix}/{}", branch.name))
+        .unwrap_or(branch.name);
 
     if args.dry_run {
         println!(
@@ -82,9 +97,11 @@ async fn main() {
         "--revision",
         &args.change,
     ]));
+
     if !branch_output.stdout.trim().is_empty() {
         println!("{}", branch_output.stdout);
     }
+
     if !branch_output.stderr.trim().is_empty() {
         println!("{}", branch_output.stderr);
     }
@@ -100,7 +117,13 @@ async fn main() {
     push_output.to_console();
 }
 
-fn execute(command: &mut process::Command) -> Output {
+#[derive(JsonSchema, Deserialize, Debug)]
+struct Branch {
+    #[schemars(regex(pattern = "^[a-z]+(-[a-z]+){2,4}$"))]
+    name: String,
+}
+
+fn execute(command: &mut process::Command) -> CommandOutput {
     log::trace!("{command:?}");
     let process::Output {
         status,
@@ -118,18 +141,18 @@ fn execute(command: &mut process::Command) -> Output {
         process::exit(status.code().unwrap_or(1));
     }
 
-    Output {
+    CommandOutput {
         stdout: String::from_utf8_lossy(&stdout).to_string(),
         stderr: String::from_utf8_lossy(&stderr).to_string(),
     }
 }
 
-struct Output {
+struct CommandOutput {
     stdout: String,
     stderr: String,
 }
 
-impl Output {
+impl CommandOutput {
     fn to_console(&self) {
         let Self { stdout, stderr } = self;
         if !stdout.trim().is_empty() {
@@ -196,10 +219,11 @@ enum LogFormat {
 }
 
 const LOG_ONE_LINE: &'static str = r#"if(description, description.first_line(), '') ++ "\n""#;
-const LOG_FULL: &'static str = "builtin_log_compact_full_description";
+const LOG_FULL: &'static str =
+    r#"if(description, description, '') ++ "\n**********\n**********\n**********\n\n""#;
 
-const PROMPT_START: &'static str = "Here is the Git commit log for this branch:";
-const PROMPT_END: &'static str = r#"Reply with the shortest descriptive branch name (*not* a pull request description, just a branch name) for a Git branch containing these commits, using no more than 7 lowercase words separated by hyphens.
+const PROMPT_START: &'static str = "A commit log";
+const PROMPT_END: &'static str = r#"
 
 - A good branch name is always derived from the summary of changes in the log.
 - Never return branch names which:
@@ -207,4 +231,15 @@ const PROMPT_END: &'static str = r#"Reply with the shortest descriptive branch n
     - are too long, for example `this-branch-name-is-fifteen-words-long-instead-of-maxxing-out-at-seven-as-instructed`
     - simply include a date
 - Do not include any explanation, only the branch name.
+- Ignore any empty commits.
+
+Commits are separated by the following string:
+
+```
+**********
+**********
+**********
+```
+
+The best descriptive branch name following these rules (*not* a pull request description, just a branch name) for a Git branch containing these commits, using at least 3 and no more than 5 lowercase words separated by hyphens, is:
 "#;

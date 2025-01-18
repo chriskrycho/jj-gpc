@@ -38,7 +38,7 @@ async fn main() {
     }
 
     let prompt = format!(
-        "{PROMPT_START}\n\n```\n{commits}\n```\n\n{PROMPT_END}",
+        "{PROMPT_START}\n\n{commits}\n\n{PROMPT_END}",
         commits = commits.stdout
     );
     log::debug!("prompt: {prompt}");
@@ -208,25 +208,19 @@ enum LogFormat {
 }
 
 const LOG_ONE_LINE: &'static str =
-    r#"if(description, description.first_line(), '') ++ "\n\n**********\n\n""#;
-const LOG_FULL: &'static str = r#"if(description, description, '') ++ "\n\n**********\n\n""#;
+    r#""```\n" ++ if(description, description.first_line(), '') ++ "\n```\n\n---\n\n""#;
+const LOG_FULL: &'static str = r#""```\n" ++ if(description, description, '') ++ "```\n\n---\n\n""#;
 
 const PROMPT_START: &'static str = r#"Rules for branch names:
 
 - A good branch name uses at least 3 and no more than 5 lowercase words separated by hyphens.
 - A good branch name is always derived from the summary of changes in the log.
+- A good branch name incorporates the sentiment of the majority of commits in the log.
 - A bad branch name has too little information, like `ab-1234`.
 - A bad branch name would only use the date.
 - Empty commits are not relevant.
 
-A commit log. Commits are in blocks of markdown. If there are multiple commits, they will be separated by the following string:
-
-```
-**********
-```
-
-Commits:
-
+Commits are in blocks of markdown, separated by `---`. The commits that make up this branch are:
 "#;
 const PROMPT_END: &'static str = r#"
 

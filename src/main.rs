@@ -9,7 +9,6 @@ use ollama_rs::{
     },
     Ollama,
 };
-use schemars::schema_for;
 use serde::Deserialize;
 
 #[tokio::main(flavor = "current_thread")]

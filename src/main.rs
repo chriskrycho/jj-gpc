@@ -67,15 +67,15 @@ async fn main() {
 
     let GenerationResponse { response, .. } = response_result;
 
-    let branch = serde_json::from_str::<Branch>(&response).unwrap_or_else(|err| {
+    let Branch(branch) = serde_json::from_str::<Branch>(&response).unwrap_or_else(|err| {
         eprintln!("{err}");
         process::exit(1);
     });
 
     let branch_name = args
         .prefix
-        .map(|prefix| format!("{prefix}/{}", branch.name))
-        .unwrap_or(branch.name);
+        .map(|prefix| format!("{prefix}/{}", branch))
+        .unwrap_or(branch);
 
     if args.dry_run {
         println!(
@@ -118,10 +118,7 @@ async fn main() {
 }
 
 #[derive(JsonSchema, Deserialize, Debug)]
-struct Branch {
-    #[schemars(regex(pattern = "^[a-z]+(-[a-z]+){2,4}$"))]
-    name: String,
-}
+struct Branch(#[schemars(regex(pattern = "^[a-z]+(-[a-z]+){2,4}$"))] String);
 
 fn execute(command: &mut process::Command) -> CommandOutput {
     log::trace!("{command:?}");

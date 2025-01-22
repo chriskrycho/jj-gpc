@@ -74,7 +74,7 @@ async fn main() {
             "[dry run] jj bookmark create {branch_name} --revision {}",
             args.change
         );
-        println!("[dry run] jj git push --bookmark {branch_name}");
+        println!("[dry run] jj git push --bookmark {branch_name} --allow-new");
         return;
     }
 

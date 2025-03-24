@@ -55,12 +55,18 @@ async fn main() {
     let response_result = Ollama::default()
         .generate(request)
         .await
-        .unwrap_or_else(|e| panic!("{e}"));
+        .unwrap_or_else(|e| {
+            eprintln!("Could not run Ollama. Maybe it is not installed or running?");
+            eprintln!("Cause: {e}");
+            process::exit(1);
+        });
 
     let GenerationResponse { response, .. } = response_result;
 
     let Branch(branch) = serde_json::from_str::<Branch>(&response).unwrap_or_else(|err| {
-        eprintln!("{err}");
+        eprintln!("Invalid model response");
+        eprintln!("Cause: {err}");
+        eprintln!("Original response: '{response}'");
         process::exit(1);
     });
 
